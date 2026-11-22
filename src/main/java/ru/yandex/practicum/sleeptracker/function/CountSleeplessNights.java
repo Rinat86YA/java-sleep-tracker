@@ -10,10 +10,8 @@ import java.util.List;
 import java.util.function.Function;
 
 public class CountSleeplessNights extends BasicFunction<Long> {
-    private static final LocalTime MORNING_6AM = LocalTime.of(6, 0);
-    private static final LocalTime NOON_12PM = LocalTime.of(12, 0);
     private static final LocalTime MIDNIGHT = LocalTime.of(0, 0);
-
+    private static final LocalTime MORNING_6AM = LocalTime.of(6, 0);
 
     public CountSleeplessNights(String resultDescription) {
         super(resultDescription);
@@ -22,41 +20,56 @@ public class CountSleeplessNights extends BasicFunction<Long> {
 
     private Function<List<SleepingSession>, Long> getFunction() {
         return list -> {
-            if (list == null || list.isEmpty()) throw new FunctionException("Ошибка - нет данных для анализа");
-            return list.stream()
-                    .filter(session -> {
-                        LocalDateTime sleepStart = session.getSleepStart();
-                        LocalDateTime sleepEnd = session.getSleepEnd();
-                        LocalDate sleepStartDate = session.getSleepStart().toLocalDate();
-                        LocalDate sleepEndDate = session.getSleepEnd().toLocalDate();
+            if (list == null || list.isEmpty()) {
+                throw new FunctionException("Ошибка - нет данных для анализа");
+            }
 
-                        if (sleepStartDate.getDayOfMonth() != sleepEndDate.getDayOfMonth()) return false;
+            LocalDateTime periodStart = list.get(0).getSleepStart();
+            LocalDateTime periodEnd = list.get(0).getSleepEnd();
+            for (SleepingSession session : list) {
+                if (session.getSleepStart().isBefore(periodStart)) {
+                    periodStart = session.getSleepStart();
+                }
+                if (session.getSleepEnd().isAfter(periodEnd)) {
+                    periodEnd = session.getSleepEnd();
+                }
+            }
 
-                        LocalDateTime dateTime600 = getMorningBoundary(sleepStartDate);
-                        LocalDateTime dateTime1200 = getNoonBoundary(sleepStartDate);
-                        LocalDateTime dateTime0000 = getMidnightBoundary(sleepStartDate.plusDays(1));
+            long sleeplessNights = 0;
+            LocalDate date = periodStart.toLocalDate();
+            LocalDate lastDate = periodEnd.toLocalDate();
 
-                        // Если засыпание и пробуждение происходит в один день, то вопрос только в том
-                        // заснул ли пользователь после шести или до тк ночь считается с 0 по 6 утра
-                        if (sleepStart.isAfter(dateTime600)) return true;
+            while (!date.isAfter(lastDate)) {
+                if (isNightInPeriod(date, periodStart, periodEnd) && !hasSleepDuringNight(list, date)) {
+                    sleeplessNights++;
+                }
+                date = date.plusDays(1);
+            }
 
-                        return false;
-                    })
-                    .count();
+            return sleeplessNights;
         };
     }
 
-    private LocalDateTime getMorningBoundary(LocalDate date) {
-        return LocalDateTime.of(date, MORNING_6AM);
+    private boolean isNightInPeriod(LocalDate date, LocalDateTime periodStart, LocalDateTime periodEnd) {
+        LocalDateTime nightStart = LocalDateTime.of(date, MIDNIGHT);
+        LocalDateTime nightEnd = LocalDateTime.of(date, MORNING_6AM);
+
+        return nightEnd.isAfter(periodStart) && nightStart.isBefore(periodEnd);
     }
 
-    private LocalDateTime getNoonBoundary(LocalDate date) {
-        return LocalDateTime.of(date, NOON_12PM);
+    private boolean hasSleepDuringNight(List<SleepingSession> list, LocalDate date) {
+        LocalDateTime nightStart = LocalDateTime.of(date, MIDNIGHT);
+        LocalDateTime nightEnd = LocalDateTime.of(date, MORNING_6AM);
+
+        for (SleepingSession session : list) {
+            boolean startedBeforeNightEnd = session.getSleepStart().isBefore(nightEnd);
+            boolean endedAfterNightStart = session.getSleepEnd().isAfter(nightStart);
+
+            if (startedBeforeNightEnd && endedAfterNightStart) {
+                return true;
+            }
+        }
+
+        return false;
     }
-
-    private LocalDateTime getMidnightBoundary(LocalDate date) {
-        return LocalDateTime.of(date, MIDNIGHT);
-    }
-
-
 }

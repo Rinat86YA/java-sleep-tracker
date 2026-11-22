@@ -172,7 +172,7 @@ public class SleepTrackerAppTest {
     void functionCountSleeplessNights() {
         loadLogsSleepSession();
         loadFunctions();
-        Assertions.assertEquals(4L, listFunction.get(6).calculate(listSleepingSession));
+        Assertions.assertEquals(20L, listFunction.get(6).calculate(listSleepingSession));
     }
 
     @DisplayName("Функция по выявлению кол-ва бессонных ночей - проверка подсчета при пустом списке")
@@ -192,7 +192,7 @@ public class SleepTrackerAppTest {
         listSleepingSession = new ArrayList<>();
         listSleepingSession.add(new SleepingSession(sleepStart, sleepEnd, SleepQuality.BAD));
         loadFunctions();
-        Assertions.assertEquals(1L, listFunction.get(6).calculate(listSleepingSession));
+        Assertions.assertEquals(0L, listFunction.get(6).calculate(listSleepingSession));
     }
 
     @DisplayName("Функция по выявлению кол-ва бессонных ночей - проверка подсчета если поспать утром")
@@ -203,7 +203,7 @@ public class SleepTrackerAppTest {
         listSleepingSession = new ArrayList<>();
         listSleepingSession.add(new SleepingSession(sleepStart, sleepEnd, SleepQuality.BAD));
         loadFunctions();
-        Assertions.assertEquals(1L, listFunction.get(6).calculate(listSleepingSession));
+        Assertions.assertEquals(0L, listFunction.get(6).calculate(listSleepingSession));
     }
 
     @DisplayName("Функция по выявлению кол-ва бессонных ночей - проверка подсчета если заснуть ночью и проснуться утром")
@@ -238,5 +238,4 @@ public class SleepTrackerAppTest {
         loadFunctions();
         Assertions.assertEquals(0L, listFunction.get(6).calculate(listSleepingSession));
     }
-
 }
